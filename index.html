@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Noomklaw Unit Converter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            display: none;
+            text-align: center;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .result-label {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .result-value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .error {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .error.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Unit Converter</h1>
+
+        <div class="form-group">
+            <label for="value">Enter Value</label>
+            <input type="number" id="value" placeholder="e.g., 5" step="any">
+        </div>
+
+        <div class="row">
+            <div class="form-group">
+                <label for="from-unit">From</label>
+                <select id="from-unit">
+                    <option value="feet">Feet</option>
+                    <option value="inches">Inches</option>
+                    <option value="celsius">Celsius</option>
+                    <option value="fahrenheit">Fahrenheit</option>
+                    <option value="centimeters">Centimeters</option>
+
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="to-unit">To</label>
+                <select id="to-unit">
+                    <option value="inches">Inches</option>
+                    <option value="feet">Feet</option>
+                    <option value="fahrenheit">Fahrenheit</option>
+                    <option value="celsius">Celsius</option>
+                    <option value="centimeters">Centimeters</option>
+                </select>
+            </div>
+        </div>
+
+        <button onclick="convert()">Convert</button>
+
+        <div class="result" id="result">
+            <div class="result-label">Result</div>
+            <div class="result-value" id="result-value">0</div>
+        </div>
+
+        <div class="error" id="error"></div>
+    </div>
+
+    <script>
+        function convert() {
+            const value = document.getElementById("value").value;
+            const fromUnit = document.getElementById("from-unit").value;
+            const toUnit = document.getElementById("to-unit").value;
+            const errorEl = document.getElementById("error");
+            const resultEl = document.getElementById("result");
+
+            // Clear error
+            errorEl.textContent = "";
+            errorEl.classList.remove("show");
+
+            if (!value || value === "") {
+                errorEl.textContent = "Please enter a value";
+                errorEl.classList.add("show");
+                resultEl.classList.remove("show");
+                return;
+            }
+
+            // Call your Python backend
+            fetch(`http://localhost:5001/api/convert?value=${value}&from=${fromUnit}&to=${toUnit}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        errorEl.textContent = data.error;
+                        errorEl.classList.add("show");
+                        resultEl.classList.remove("show");
+                    } else {
+                        document.getElementById("result-value").textContent = data.output.toFixed(2);
+                        resultEl.classList.add("show");
+                    }
+                })
+                .catch(err => {
+                    errorEl.textContent = "Error connecting to server";
+                    errorEl.classList.add("show");
+                    resultEl.classList.remove("show");
+                });
+        }
+
+        // Allow Enter key to trigger convert
+        document.getElementById("value").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                convert();
+            }
+        });
+    </script>
+</body>
+</html>
